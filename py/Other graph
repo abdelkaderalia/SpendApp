@@ -1,0 +1,15 @@
+df_historical_raw = historical('097')
+  h = df_historical_raw.copy()
+
+  fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+  fig.add_trace(go.Scatter(x=h['fiscal_year'], y=h['transaction_count'], name="Number of Contracts", mode="lines"),secondary_y=True)
+
+  fig.add_trace(go.Bar(x=h['fiscal_year'], y=h['obligations'], name="Contract Spending"),secondary_y=False)
+
+  fig.update_xaxes(title_text="Fiscal Year")
+  fig.update_yaxes(title_text="Contract Spending",secondary_y=False)
+  fig.update_yaxes(title_text="Number of Contracts", secondary_y=True)
+  fig.update_layout(height=600,font=dict(size=16))
+
+  st.plotly_chart(fig, use_container_width=True)
