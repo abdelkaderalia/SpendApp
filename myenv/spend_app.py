@@ -5,6 +5,7 @@ import numpy as np
 import altair as alt
 import sys
 import requests
+pip install openpyxl
 import openpyxl
 import plotly as plt
 import plotly.express as px
