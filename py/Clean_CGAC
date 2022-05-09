@@ -32,8 +32,8 @@ def CGAC_list():
     df = df.drop_duplicates(subset=['AGENCY NAME'])
     df = df.sort_values(by=['AGENCY NAME'])
 
-    full = pd.DataFrame(columns=['fiscal_year','latest_action_date','toptier_code','transaction_count','obligations','messages'])
     for code in df['CGAC']:
+        full = pd.DataFrame(columns=['fiscal_year','latest_action_date','toptier_code','transaction_count','obligations','messages'])
         for year in range(2008,2023):
             url = 'https://api.usaspending.gov'
             endpoint=f'/api/v2/agency/{code}/awards/'
@@ -48,8 +48,8 @@ def CGAC_list():
                 a = a.tail(a.shape[0] -1)
                 full = full.append(a)
 
-                if full.shape[0]==0:
-                    df.drop(df.index[df['CGAC'] == code], inplace=True)
+        if full.shape[0]==0:
+            df = df[df.CGAC!=code]
 
     new_row = pd.DataFrame({'CGAC':' ', 'AGENCY NAME':' '},index =[0])
     df = pd.concat([new_row, df]).reset_index(drop = True)
@@ -60,20 +60,28 @@ df = CGAC_list()
 df.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx',index = False, header=True)
 
 
-@st.cache(show_spinner=False)
-def historical(toptier_code):
-    full = pd.DataFrame(columns=['fiscal_year','latest_action_date','toptier_code','transaction_count','obligations','messages'])
-    for year in range(2008,2023):
-        url = 'https://api.usaspending.gov'
-        endpoint=f'/api/v2/agency/{toptier_code}/awards/'
-        payload = {"fiscal_year":year}
+def filter_no_detail():
+    df = pd.read_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx')
+    for code in df['CGAC'][1:]:
+        full = pd.DataFrame(columns=['fiscal_year','name','abbreviation','total_obligations','transaction_count','new_award_count','children'])
+        for year in range(2008,2023):
+            url = 'https://api.usaspending.gov'
+            endpoint=f'/api/v2/agency/{code}/sub_agency/'
+            payload = {"fiscal_year":year}
 
-        response = requests.get(f'{url}{endpoint}',params=payload)
-        #print(response.status_code)
-        if response.status_code == 200:
-            data = response.json()
-            df = pd.DataFrame(data.items()).transpose()
-            df.columns = df.iloc[0]
-            df = df.tail(df.shape[0] -1)
-            full = full.append(df)
-            a1.shape[0]==0
+            response = requests.get(f'{url}{endpoint}',params=payload)
+            #print(response.status_code)
+            if response.status_code == 200:
+                data = response.json()
+                a = pd.DataFrame(data['results'])
+                full = full.append(a)
+
+        if full.shape[0]==0:
+            df = df[df.CGAC!=code]
+
+    return df
+
+df = filter_no_detail()
+df2 = df.reset_index(drop = True)
+
+df2.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx',index = False, header=True)
