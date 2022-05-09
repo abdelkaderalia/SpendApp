@@ -1,0 +1,40 @@
+import pandas as pd
+import numpy as np
+import altair as alt
+import sys
+import requests
+
+def CGAC_list():
+    url = 'https://www.dla.mil/Portals/104/Documents/DLMS/Committees/DoDAAD/CGAC-Table-for-DoDAAD.xlsx'
+    r = requests.get(url)
+    open('temp.xlsx', 'wb').write(r.content)
+    df = pd.read_excel('temp.xlsx')
+    df = df.iloc[3:,1:3]
+    df.columns = df.iloc[0]
+    df = df.tail(df.shape[0] -1)
+    df['AGENCY NAME']=df['AGENCY NAME'].str.title()
+
+    to_replace = ['The Judicial Branch','The Legislative Branch','Agriculture, Department Of (1200)','Commerce, Department Of (1300)','Interior, Department Of The (1400)','Justice, Department Of (1500)','Labor, Department Of (1600)','State, Department Of (1900)','Treasury, Department Of The (2000)','Office Of Personnel Management (2400)','Social Security Administration (2800)','Nuclear Regulatory Commission (3100)','General Services Administration (4700)','National Science Foundation (4900)','Environmental Protection Agency (6800)','Homeland Security, Department Of (7000)','Agency For International Development (1152)','Small Business Administration (7300)','Health And Human Services, Department Of (7500)','National Aeronautics And Space Administration (8000)','Housing And Urban Development, Department Of (8600)','Energy, Department Of (8900)','Education, Department Of (9100)','Veterans Affairs, Department Of 3600)','Transportation, Department Of']
+
+    replace_values = ['Judicial Branch','Legislative Branch','Department of Agriculture','Department of Commerce','Department of the Interior','Department of Justice','Department of Labor','Department of State','Department of the Treasury','Office of Personnel Management','Social Security Administration','Nuclear Regulatory Commission','General Services Administration','National Science Foundation','Environmental Protection Agency','Department of Homeland Security','Agency for International Development','Small Business Administration','Department of Health and Human Services','National Aeronautics and Space Administration','Department of Housing and Urban Development','Department of Energy','Department of Education','Department of Veterans Affairs','Department of Transportation']
+
+    df = df.replace(to_replace,replace_values)
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('Of','of')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('On','on')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('Or','or')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('organization','Organization')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('For','for')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('The','the')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('And','and')
+    df['AGENCY NAME'] = df['AGENCY NAME'].str.replace('office','Office')
+    new_row = pd.DataFrame({'CGAC':'097', 'AGENCY NAME':'Department of Defense'},index =[0])
+    df = pd.concat([new_row, df]).reset_index(drop = True)
+    df = df.drop_duplicates(subset=['AGENCY NAME'])
+    df = df.sort_values(by=['AGENCY NAME'])
+    new_row = pd.DataFrame({'CGAC':' ', 'AGENCY NAME':' '},index =[0])
+    df = pd.concat([new_row, df]).reset_index(drop = True)
+
+    return df
+
+df = CGAC_list()
+df.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx',index = False, header=True)
