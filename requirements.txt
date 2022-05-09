@@ -1,6 +1,0 @@
-###### Requirements without Version Specifiers ######
-pandas
-numpy
-requests
-openpyxl
-plotly
