@@ -1,8 +1,6 @@
 ###### Requirements without Version Specifiers ######
 pandas
 numpy
-sys
 requests
 openpyxl
 plotly
-time
