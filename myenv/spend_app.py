@@ -15,12 +15,12 @@ from io import BytesIO
 #### Functions
 @st.cache(show_spinner=False)
 def CGAC_list():
-    url = 'https://github.com/abdelkaderalia/SpendApp/raw/main/Raw_Data/CGAC_Table.xlsx'
+    url = 'https://github.com/abdelkaderalia/SpendApp/raw/main/Clean_Data/CGAC_list.xlsx'
     r = requests.get(url)
     data = r.content
     df = pd.read_excel(data)
     return df
-
+    
 @st.cache(show_spinner=False)
 def historical(toptier_code):
     full = pd.DataFrame(columns=['fiscal_year','latest_action_date','toptier_code','transaction_count','obligations','messages'])
