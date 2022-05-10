@@ -238,5 +238,5 @@ if __name__ == "__main__":
                         s = "{:,.2f}".format(spend2021) # Reformaat the balance with commas
                         receipt_output = "{:,.2f}".format(receipt) # Reformat the total 'spend' with commas
                         spend_output = f'${s}' # Show balance with a dollar sign
-                        col1, col2, col3, col4, col5 = st.columns(5) # Create 5 columns
-                        budget = col3.metric(label="Left to spend", value=spend_output, delta=receipt_output) # Show balance widget centered in column 3, and use receipt output to show the delta after each user selection
+                        col1, col2, col3 = st.columns(3) # Create 5 columns
+                        budget = col2.metric(label="Left to spend", value=spend_output, delta=receipt_output) # Show balance widget centered in column 3, and use receipt output to show the delta after each user selection
