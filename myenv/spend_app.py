@@ -221,7 +221,7 @@ if __name__ == "__main__":
                         col1, col2, col3 = st.columns(3)
                         num4 = col1.number_input('End hunger in the U.S. - $25B',step=1)
                         num5 = col2.number_input('End homelessness in the U.S. - $20B',step=1)
-                        num6 = col3.number_input('Pay off all outstanding U.S. private student loan debt - $131.1B',step=1)
+                        num6 = col3.number_input('Pay off all outstanding U.S. private student debt - $131.1B',step=1)
 
                         st.markdown('<h4 align="center">Just for fun</h4>', unsafe_allow_html=True) # Add a subheader
                         # Create another row of 3 widgets
