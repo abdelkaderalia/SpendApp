@@ -24,7 +24,15 @@ def CGAC_list():
     r = requests.get(url)
     data = r.content
     df = pd.read_excel(data)
-    df = df.fillna('')
+    s = pd.Series(df['CGAC'])
+    df['CGAC']=pd.to_numeric(df['CGAC'],errors='coerce')
+    df = df.fillna(0)
+    df['CGAC']=df['CGAC'].apply(np.int64)
+    df['CGAC']=df['CGAC'].astype(str)
+    df['CGAC'] = np.where(df['CGAC'].apply(len)<3, df['CGAC'].str.zfill(3), df['CGAC'])
+    df = df.iloc[1: , :]
+    new_row = pd.DataFrame({'CGAC':' ', 'AGENCY NAME':' ','OTHER NAME':' ','Link':' ','Description':' ','Website':' '},index =[0])
+    df = pd.concat([new_row, df]).reset_index(drop = True)
     return df
 
 @st.cache(show_spinner=False) # Use caching to improve speed and performance
