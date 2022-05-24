@@ -24,6 +24,7 @@ def CGAC_list():
     r = requests.get(url)
     data = r.content
     df = pd.read_excel(data)
+    df = df.fillna('')
     return df
 
 @st.cache(show_spinner=False) # Use caching to improve speed and performance
@@ -115,14 +116,16 @@ if __name__ == "__main__":
 
     agency_name = st.selectbox("Choose a federal agency:", agencies) # Store user selection for agency name
 
-
     if agency_name != ' ': # If agency name has been selected
         code = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'CGAC'].item() # Store corresponding CGAC code for agency
-        #endpoint = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Link'].item() # Store corresponding link for agency
-        #link = 'https://www.usa.gov' + endpoint
-        text = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Text'].item()
-        #st.subheader(f'[{agency_name}]({link})')
-        st.write(text)
+        link = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Website'].item() # Store corresponding link for agency
+        text = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Description'].item()
+
+        if text != '':
+            st.subheader(f'[{agency_name}]({link})')
+            st.write(text)
+        elif text == '':
+            st.subheader(f'{agency_name}')
 
         data_load_state = st.text('Loading data...') # Show a message to indicate data is loading
         df_category_raw = category(code) # Run function to pull subagency award data
