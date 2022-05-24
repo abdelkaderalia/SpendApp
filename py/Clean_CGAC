@@ -67,7 +67,6 @@ def CGAC_list():
 df = CGAC_list() # Run function
 df.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx',index = False, header=True) # Store results in Github repository
 
-
 def filter_no_detail():
     """
     This function further cleans the CGAC list by checking all agencies against another API endpoint and removing the ones that do not return data

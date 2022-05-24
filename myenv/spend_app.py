@@ -114,9 +114,16 @@ if __name__ == "__main__":
     agencies = agencylist['AGENCY NAME'].tolist() # Convert agency names to list for dropdown menus
 
     agency_name = st.selectbox("Choose a federal agency:", agencies) # Store user selection for agency name
-    code = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'CGAC'].item() # Store corresponding CGAC code for agency
+
 
     if agency_name != ' ': # If agency name has been selected
+        code = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'CGAC'].item() # Store corresponding CGAC code for agency
+        #endpoint = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Link'].item() # Store corresponding link for agency
+        #link = 'https://www.usa.gov' + endpoint
+        text = agencylist.loc[agencylist['AGENCY NAME'] == agency_name, 'Text'].item()
+        #st.subheader(f'[{agency_name}]({link})')
+        st.write(text)
+
         data_load_state = st.text('Loading data...') # Show a message to indicate data is loading
         df_category_raw = category(code) # Run function to pull subagency award data
         c = df_category_raw.copy() # Store a copy

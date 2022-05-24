@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import sys
+import requests
+from bs4 import BeautifulSoup
+from string import ascii_lowercase
+
+names = []
+links = []
+
+for letter in ascii_lowercase:
+
+    base = "https://www.usa.gov/federal-agencies/"
+    end = f'{letter}#current-letter'
+    url = base + end
+    page = requests.get(url)
+    page.status_code
+
+    list = BeautifulSoup(page.content,'html.parser')
+
+    sections = list.find("ul", {"class":"one_column_bullet"}).find_all("li")
+
+    link_list = []
+
+    for bullet in sections:
+        names.append(bullet.text)
+        link_list.append(bullet.a)
+
+    for i in link_list:
+        a = str(i).split('href="',3)[1].split('"')[0]
+        links.append(a)
+
+df = pd.DataFrame()
+df['OTHER NAME']=names
+df['Link']=links
+
+text = []
+sites = []
+
+for link in links:
+    base = 'https://www.usa.gov'
+    url = base + link
+    page = requests.get(url)
+    page.status_code
+
+    content = BeautifulSoup(page.content,'html.parser')
+    sections = content.find("div", {"class":"col-md-9 rightnav clearfix"}).find_all("p")
+    des = str(sections[0]).split(">")[1].split("<")[0]
+    sections = content.find("div", {"class":"col-md-9 rightnav clearfix"}).find_all("a")
+    site = str(sections[0]).split('href="',3)[1].split('"')[0]
+
+    text.append(des)
+    sites.append(site)
+
+text[231]='The United States Fire Administration, part of the Federal Emergency Management Agency, works to prepare for, prevent, respond to all hazards.'
+
+text[577]='The United States Fire Administration, part of the Federal Emergency Management Agency, works to prepare for, prevent, respond to all hazards.'
+
+df['Description']=text
+df['Website']=sites
+
+df.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/Link_list.xlsx',index = False, header=True)
+
+list = pd.read_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx')
+full = list.merge(df,on='OTHER NAME',how='left')
+full = full.fillna('')
+full.to_excel('/Users/Alia/Documents/Github/SpendApp/Clean_Data/CGAC_list.xlsx',index = False, header=True)
