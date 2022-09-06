@@ -54,11 +54,6 @@ def CGAC_list():
 
 
 async def process_year(session,year,toptier_code,type):
-    """
-    This function uses an asynchronous process USASpending API to pull award data for a specific federal agency in a particular year.
-    Input: CGAC code (string)
-    Output: Dataframe of results (pd.Dataframe)
-    """
     url = 'https://api.usaspending.gov'
     payload = {"fiscal_year":year}
 
@@ -81,11 +76,6 @@ async def process_year(session,year,toptier_code,type):
 
 
 async def async_func(toptier_code,type):
-    """
-    This function uses an asynchronous process to pull data from the USAspending API from 2008-2022 and format the restuls appropriately in a dataframe.
-    Input: CGAC code (string)
-    Output: Dataframe of results (pd.Dataframe)
-    """
     async with aiohttp.ClientSession() as session:
         arr = []
 
