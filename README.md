@@ -1,4 +1,2 @@
 # SpendApp
-This repository is a workspace for my final project for PPOL545 - Data Science II
-
-For this project, I built an app using Streamlit that pulls data from the USASpending API to generate interactive visualizations of spending data for different government agencies based on the user's selections. [Check out the app here.](https://share.streamlit.io/abdelkaderalia/spendapp/main/myenv/spend_app.py) [Watch a demo of the app here.](https://github.com/abdelkaderalia/SpendApp/raw/main/Deliverables/Abdelkader_Alia_Streamlit_Demo.mp4)
+This project is an app using created with the streamlit that pulls data from the USASpending API to generate interactive visualizations of spending data for different government agencies based on the user's selections. In Version 2, I have used asyncio to parallelize API calls and improve performance. [Check out the app here.](https://share.streamlit.io/abdelkaderalia/spendapp/main/myenv/spend_app.py) [Watch a demo of Version 1 of the app here.](https://github.com/abdelkaderalia/SpendApp/raw/main/Deliverables/Abdelkader_Alia_Streamlit_Demo.mp4)
