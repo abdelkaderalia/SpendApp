@@ -133,7 +133,8 @@ if __name__ == "__main__":
     #st.markdown('<h2 align="left">How much money does the federal government spend?</h2>', unsafe_allow_html=True) # Add app title
     st.title('How much money does the federal government spend?')
     usasplink = 'https://www.usaspending.gov/'
-    st.write(f'This app pulls live data directly from the Department of the Treasury\'s [USAspending database]({usasplink}) using their API. Choose a federal agency below to explore their spending data.')
+    st.write(f'This app pulls live data directly from the Department of the Treasury\'s [USAspending database]({usasplink}) using their API. Their source for this data is the [Report on Budget Execution and Budgetary Resources](https://portal.max.gov/portal/document/SF133/Budget/FACTS%20II%20-%20SF%20133%20Report%20on%20Budget%20Execution%20and%20Budgetary%20Resources.html).')
+    st.write(f'This data reflects an agency\'s obligated amounts, which are based on an agency\'s written commitments to use funds for a specific purpose. Check out the [Federal Spending Transparency Data Standards](https://portal.max.gov/portal/assets/public/offm/DataStandardsFinal.htm) to learn more about obligations and other terminology. Choose a federal agency below to explore their spending data.')
     st.subheader('')
 
     agencylist = CGAC_list() # Load CGAC list as df
