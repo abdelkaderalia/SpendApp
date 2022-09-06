@@ -9,6 +9,8 @@ openpyxl = "2.6.4"
 pandas = "0.24.2"
 plotly = "*"
 requests = "2.27.1"
+aiohttp = "3.8.1"
+
 
 [dev-packages]
 

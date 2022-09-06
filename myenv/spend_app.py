@@ -2,7 +2,8 @@ import streamlit as st
 st.set_page_config(layout="wide") # Increase page width for app
 import pandas as pd
 import numpy as np
-import altair as alt
+import asyncio
+import aiohttp
 import sys
 import requests
 import openpyxl
@@ -12,7 +13,23 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
 
+
 #### Functions
+
+def human_format(num):
+    """
+    This function changes numbers to a human-interpretable SI format.
+    Input: num (int)
+    Output: Formatted number (string)
+    """
+    num = float('{:.3g}'.format(num))
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'),
+                         ['', 'K', 'M', 'B', 'T'][magnitude])
+
 @st.cache(show_spinner=False)
 def CGAC_list():
     """
@@ -35,64 +52,69 @@ def CGAC_list():
     df = pd.concat([new_row, df]).reset_index(drop = True)
     return df
 
-@st.cache(show_spinner=False) # Use caching to improve speed and performance
-def historical(toptier_code):
-    """
-    This function calls on the USASpending API to pull award data for a specific federal agency from 2008-2022.
-    Input: CGAC code (string)
-    Output: Dataframe  results (pd.Dataframe)
-    """
-    # Create an empty dataframe to store results, specifying columns
-    full = pd.DataFrame(columns=['fiscal_year','latest_action_date','toptier_code','transaction_count','obligations','messages'])
-    for year in range(2008,2023): # Get results for each year in range
-        # Set url, endpoint, and payload (params) for API call
-        url = 'https://api.usaspending.gov'
-        endpoint=f'/api/v2/agency/{toptier_code}/awards/'
-        payload = {"fiscal_year":year}
 
-        # API call
-        response = requests.get(f'{url}{endpoint}',params=payload)
-        # Check response
-        if response.status_code == 200: # If successful
-            data = response.json() # Store results
+async def process_year(session,year,toptier_code,type):
+    """
+    This function uses an asynchronous process USASpending API to pull award data for a specific federal agency in a particular year.
+    Input: CGAC code (string)
+    Output: Dataframe of results (pd.Dataframe)
+    """
+    url = 'https://api.usaspending.gov'
+    payload = {"fiscal_year":year}
+
+    if type == 'historical':
+        endpoint=f'/api/v2/agency/{toptier_code}/awards/'
+        async with session.get(f'{url}{endpoint}',params=payload) as resp:
+            data = await resp.json()
             df = pd.DataFrame(data.items()).transpose() # Convert to df and transpose
             df.columns = df.iloc[0] # Reset column names using first row
-            df = df.tail(df.shape[0] -1) # Remove first row
-            full = full.append(df) # Append to full df
+            df = df.tail(df.shape[0]-1) # Remove first row
 
-    full['fiscal_year']=full['fiscal_year'].astype(str) # Redefine year as string
-    full = full.rename(columns={"fiscal_year":"Fiscal Year","obligations":"Spending"}) # Change column names
-    full = full.reset_index(drop=True) # Reset index
-    return full
-
-@st.cache(show_spinner=False) # Use caching to improve speed and performance
-def category(toptier_code):
-    """
-    This function calls on the USASpending API to pull award data broken down by subagency for a specific federal agency from 2008-2022.
-    Input: CGAC code (string)
-    Output: Dataframe  results (pd.Dataframe)
-    """
-    # Create an empty dataframe to store results, specifying columns
-    full = pd.DataFrame(columns=['fiscal_year','name','abbreviation','total_obligations','transaction_count','new_award_count','children'])
-    for year in range(2008,2023): # Get results for each year in range
-        # Set url, endpoint, and payload (params) for API call
-        url = 'https://api.usaspending.gov'
+    elif type == 'category':
         endpoint=f'/api/v2/agency/{toptier_code}/sub_agency/'
-        payload = {"fiscal_year":year}
+        async with session.get(f'{url}{endpoint}',params=payload) as resp:
+            data = await resp.json()
+            df = pd.DataFrame(data['results'])
+            df.insert(loc = 0,column = 'fiscal_year',value = year)
 
-        # API call
-        response = requests.get(f'{url}{endpoint}',params=payload)
-        # Check response
-        if response.status_code == 200: # If successful
-            data = response.json() # Store results
-            df = pd.DataFrame(data['results']) # Convert to df
-            df.insert(loc = 0,column = 'fiscal_year',value = year) # Add column for fiscal year
-            full = full.append(df) # Append to full df
+    return df
 
-    full = full.rename(columns={"name": "Subagency","fiscal_year":"Fiscal Year","total_obligations":"Spending"}) # Rename columns
-    full['Fiscal Year']=full['Fiscal Year'].astype(str) # Redefine year as string
-    full = full.reset_index(drop=True) # Reset index
-    return full
+
+async def async_func(toptier_code,type):
+    """
+    This function uses an asynchronous process to pull data from the USAspending API from 2008-2022 and format the restuls appropriately in a dataframe.
+    Input: CGAC code (string)
+    Output: Dataframe of results (pd.Dataframe)
+    """
+    async with aiohttp.ClientSession() as session:
+        arr = []
+
+        for year in range(2008,2023):
+            df = process_year(session,year,toptier_code,type)
+            arr.append(df)
+
+        results = await asyncio.gather(*arr)
+
+        if type == 'historical':
+            full = pd.DataFrame(columns=['fiscal_year','toptier_code','transaction_count','obligations','messages','latest_action_date'])
+            for item in results:
+                full = full.append(item)
+
+            full['fiscal_year']=full['fiscal_year'].astype(str) # Redefine year as string
+            full = full.rename(columns={"fiscal_year":"Fiscal Year","obligations":"Spending"}) # Change column names
+            full = full.reset_index(drop=True)
+
+        elif type == 'category':
+            full = pd.DataFrame(columns=['fiscal_year','name','abbreviation','total_obligations','transaction_count','new_award_count','children'])
+            for item in results:
+                full = full.append(item)
+
+            full = full.rename(columns={"name": "Subagency","fiscal_year":"Fiscal Year","total_obligations":"Spending"}) # Rename columns
+            full['Fiscal Year']=full['Fiscal Year'].astype(str) # Redefine year as string
+            full = full.reset_index(drop=True)
+
+        return full
+
 
 @st.cache(show_spinner=False) # Use caching to improve speed and performance
 def breakdown_by(toptier_code):
@@ -115,9 +137,14 @@ def breakdown_by(toptier_code):
         df = df.rename(columns={"name":"Breakdown","obligated_amount":"Spending"}) # Rename columns
         return df
 
+
 #### App starts here
 if __name__ == "__main__":
-    st.markdown('<h2 align="center">How much money does the federal government spend?</h2>', unsafe_allow_html=True) # Add app title
+    #st.markdown('<h2 align="left">How much money does the federal government spend?</h2>', unsafe_allow_html=True) # Add app title
+    st.title('How much money does the federal government spend?')
+    usasplink = 'https://www.usaspending.gov/'
+    st.write(f'This app pulls live data directly from the Department of the Treasury\'s [USAspending database]({usasplink}) using their API. Choose a federal agency below to explore their spending data.')
+    st.subheader('')
 
     agencylist = CGAC_list() # Load CGAC list as df
     agencies = agencylist['AGENCY NAME'].tolist() # Convert agency names to list for dropdown menus
@@ -136,19 +163,25 @@ if __name__ == "__main__":
             st.subheader(f'{agency_name}')
 
         data_load_state = st.text('Loading data...') # Show a message to indicate data is loading
-        df_category_raw = category(code) # Run function to pull subagency award data
-        c = df_category_raw.copy() # Store a copy
+        df = asyncio.run(async_func(code,'category'))
 
-        if c.shape[0]==0: # If df of results had 0 rows
+        if df.shape[0]==0: # If df of results had 0 rows
             st.warning('Sorry, no data was found! Try a different agency.') # Prompt the user to select another agency
             data_load_state.empty() # Clear warning message
         else: # If results are more than 0 rows
+            if df.shape[0]<14:
+                st.caption('*USAspending data for this agency is not available for all years.')
+            elif df.shape[0]<=15:
+                st.caption('*Detailed USAspending data is not available at the subagency level for this agency.')
+
             # Create segmented bar chart
-            fig = px.bar(c, x="Fiscal Year", y="Spending", color="Subagency",title=f'{agency_name} Spending by Subagency',color_discrete_sequence=px.colors.qualitative.Prism) # Create plot and set title and colors
+            fig = px.bar(df, x="Fiscal Year", y="Spending", color="Subagency",title=f'{agency_name} - Spending by Subagency',color_discrete_sequence=px.colors.qualitative.Prism) # Create plot and set title and colors
 
             fig.update_xaxes(title_text="Fiscal Year") # Name x axis
             fig.update_yaxes(title_text="Spending ($)") # Name y axis
             fig.update_layout(height=700,font=dict(size=16),showlegend=False,title_x=0.5) # Set plot height, font size, hide legend, and center plot title
+            #df['hoverdata'] = df['Spending'].apply(human_format)
+            #fig.update_traces(customdata=df['hoverdata'],hovertemplate = "%{color} <br> %{customdata} </br><extra></extra>")
 
             st.plotly_chart(fig, use_container_width=True) # Show plot
 
@@ -167,12 +200,11 @@ if __name__ == "__main__":
                     data_load_state = st.text('Loading data...') # Show data loading message
                     counter = 1 # Set counter = 1
                     for d in [code, code2]: # For agency 1 and agency 2
-                        df_historical_raw = historical(d) # Run function to pull award data
                         if counter==1: # If counter = 1, store results for agency 1 and add column for name
-                            a1 = df_historical_raw.copy()
+                            a1 = asyncio.run(async_func(d,'historical')) # Run function to pull award data
                             a1.insert(loc = 1,column = 'Agency',value = agency_name)
                         elif counter==2: # If counter = 2, store results for agency 2 and add column for name
-                            a2 = df_historical_raw.copy()
+                            a2 = asyncio.run(async_func(d,'historical')) # Run function to pull award data
                             a2.insert(loc = 1,column = 'Agency',value = agency_name2)
                         counter += 1 # Add 1 to counter
 
@@ -188,6 +220,10 @@ if __name__ == "__main__":
                         fig.update_yaxes(title_text="Spending ($)") # Name y axis
                         fig.update_layout(height=600,font=dict(size=16),legend=dict(yanchor="bottom",y=-0.4,xanchor="center",x=0.5,orientation="h"),title_x=0.5) # Set plot height, font size, move legent to bottom center, center title
                         fig.update_traces(line=dict(width=3)) # Increase line thickness
+                        fig.update_traces(mode="markers+lines", hovertemplate=None)
+                        h['hoverdata'] = h['Spending'].apply(human_format)
+                        fig.update_layout(hovermode="x")
+                        fig.update_traces(customdata = h['hoverdata'],hovertemplate = "%{customdata}")
 
                         st.plotly_chart(fig, use_container_width=True) # Show plot
 
@@ -213,10 +249,14 @@ if __name__ == "__main__":
                             st.warning('Sorry, no data was found! Try another option.') # Prompt the user to select a different agency
                             data_load_state.empty() # Clear warning message
                         else: # If results have more than 0 rows
+
+                            b['hoverdata'] = b['Spending'].apply(human_format)
+
                             # Create pie chart
                             fig = go.Figure(data=[go.Pie(labels=b['Breakdown'], values=b['Spending'])]) # Create plot
                             fig.update_traces(textfont_size=16,marker=dict(colors=px.colors.qualitative.Prism),rotation=140) # Set colors and font size, and rotate plot 140 degress so that slice labels don't overlap with plot title
-                            fig.update_layout(height=700,font=dict(size=16),showlegend=True,title=f'{agency_name} Spending Breakdown by {select}, 2021',title_x=0.5) # Set plot height, font size, title, and center title
+                            fig.update_layout(height=700,font=dict(size=16),showlegend=True,title=f'{agency_name} - Spending Breakdown by {select}, 2021',title_x=0.5) # Set plot height, font size, title, and center title
+                            fig.update_traces(customdata=b['hoverdata'],hovertemplate = "%{label} <br> %{percent} </br> %{customdata}<extra></extra>")
                             st.plotly_chart(fig, use_container_width=True) # Show plot
 
                             data_load_state.text('Loading data...done!') # Show message that data has loaded
