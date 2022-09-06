@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(layout="wide") # Increase page width for app
+st.set_page_config(page_icon="💲",page_title="SpendApp - USAspending Explorer",layout="wide") # Increase page width for app
 import pandas as pd
 import numpy as np
 import asyncio
@@ -231,7 +231,22 @@ if __name__ == "__main__":
 
                         st.subheader(f'What did the {agency_name} spend money on in {default}?') # Add another subheader
                         st.caption('*Breakdown data is available starting in 2017.')
+                        st.write('')
 
+                        st.write('There are two main ways to break down federal spending.')
+
+                        tab1, tab2 = st.tabs(['Budget Function', 'Object Classs'])
+                        data = np.random.randn(10, 1)
+
+                        tab1.subheader("What is a budget function?")
+                        tab1.write('The federal budget is divided into approximately 20 categories, known as budget functions. These categories organize federal spending into topics based on the major purpose the spending serves (e.g., National Defense, Transportation, Health). These are further broken down into budget sub functions.')
+
+                        tab2.subheader("What is an object class?")
+                        tab2.write('Object class is one way to classify financial data in the federal budget. An object class groups obligations by the types of items or services purchased by the federal government. (e.g. Personnel Compensation" and Equipment).')
+
+                        st.write('Learn more from the [Glossary of Terms Used in the Federal Budget Process](https://www.gao.gov/assets/gao-05-734sp.pdf).')
+
+                        st.subheader('')
                         select = st.radio("Breakdown spending by:",('Budget Function','Object Class')) # Store user's selection of breakdown method from radio buttons
 
                         # Set end of API endpoint based on user selection
