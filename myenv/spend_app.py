@@ -215,6 +215,7 @@ if __name__ == "__main__":
                         h['hoverdata'] = h['Spending'].apply(human_format)
                         fig.update_layout(hovermode="x")
                         #fig.update_traces(customdata = h['hoverdata'],hovertemplate = "%{customdata}")
+                        fig.update_traces(hovertemplate = "%{y}")
 
                         #st.dataframe(h)
                         st.plotly_chart(fig, use_container_width=True) # Show plot
