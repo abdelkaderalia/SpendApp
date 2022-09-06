@@ -107,7 +107,7 @@ async def async_func(toptier_code,type):
 
 
 @st.cache(show_spinner=False) # Use caching to improve speed and performance
-def breakdown_by(toptier_code):
+def breakdown_by(toptier_code,year,breakdown):
     """
     This function calls on the USASpending API to pull 2021 award data broken down by budget function or object class, depending on the user's input.
     Input: CGAC code (string)
@@ -116,7 +116,7 @@ def breakdown_by(toptier_code):
     # Set url, endpoint, and payload (params) for API call
     url = 'https://api.usaspending.gov'
     endpoint=f'/api/v2/agency/{toptier_code}/{breakdown}'
-    payload = {"fiscal_year":2021}
+    payload = {"fiscal_year":year}
 
     # API call
     response = requests.get(f'{url}{endpoint}',params=payload)
@@ -217,14 +217,20 @@ if __name__ == "__main__":
                         #fig.update_traces(customdata = h['hoverdata'],hovertemplate = "%{customdata}")
                         fig.update_traces(hovertemplate = "%{y}")
 
-                        #st.dataframe(h)
                         st.plotly_chart(fig, use_container_width=True) # Show plot
 
                         data_load_state.text('Loading data...done!') # Show message that data has loaded
                         time.sleep(1) # Wait for one second
                         data_load_state.empty() # Clear data load message
 
-                        st.subheader(f'What did the {agency_name} spend money on 2021?') # Add another subheader
+                        st.subheader('')
+
+                        default = 2021
+                        year = st.slider('Select a particular fiscal year:',min_value = 2017, max_value = 2022, value = default)
+                        default = year
+
+                        st.subheader(f'What did the {agency_name} spend money on in {default}?') # Add another subheader
+                        st.caption('*Breakdown data is available starting in 2017.')
 
                         select = st.radio("Breakdown spending by:",('Budget Function','Object Class')) # Store user's selection of breakdown method from radio buttons
 
@@ -235,7 +241,7 @@ if __name__ == "__main__":
                             breakdown = 'object_class/'
 
                         data_load_state = st.text('Loading data...') # Show data loading message
-                        df_breakdown_raw = breakdown_by(code) # Run function to pull breakdown data
+                        df_breakdown_raw = breakdown_by(code,year,breakdown) # Run function to pull breakdown data
                         b = df_breakdown_raw.copy() # Create a copy
 
                         if b.shape[0]==0: # If results have 0 rows
@@ -248,7 +254,7 @@ if __name__ == "__main__":
                             # Create pie chart
                             fig = go.Figure(data=[go.Pie(labels=b['Breakdown'], values=b['Spending'])]) # Create plot
                             fig.update_traces(textfont_size=16,marker=dict(colors=px.colors.qualitative.Prism),rotation=140) # Set colors and font size, and rotate plot 140 degress so that slice labels don't overlap with plot title
-                            fig.update_layout(height=700,font=dict(size=16),showlegend=True,title=f'{agency_name} - Spending Breakdown by {select}, 2021',title_x=0.5) # Set plot height, font size, title, and center title
+                            fig.update_layout(height=700,font=dict(size=16),showlegend=True,title=f'{agency_name} - Spending Breakdown by {select}, {year}',title_x=0.5) # Set plot height, font size, title, and center title
                             fig.update_traces(customdata=b['hoverdata'],hovertemplate = "%{label} <br> %{percent} </br> %{customdata}<extra></extra>")
                             st.plotly_chart(fig, use_container_width=True) # Show plot
 
@@ -256,9 +262,10 @@ if __name__ == "__main__":
                             time.sleep(1) # Wait one second
                             data_load_state.empty() # Clear data load message
 
-                        st.subheader(f'What could we pay for with the {agency_name}\'s 2021 spending?') # Add another subheader
+                        st.subheader(f'What could we pay for with the {agency_name}\'s {year} spending?') # Add another subheader
                         st.text('(Based on estimates found online)') # And some more text
-                        spend2021 = a1.loc[a1['Fiscal Year'] == '2021', 'Spending'].item() # Store agency 1's 2021 spending amount from results of earlier function call (for line graph)
+                        str_year = str(year)
+                        spend2021 = a1.loc[a1['Fiscal Year'] == str_year, 'Spending'].item() # Store agency 1's 2021 spending amount from results of earlier function call (for line graph)
 
                         st.markdown('<h4 align="center">Some costly (but important) expenditures</h4>', unsafe_allow_html=True) # Add a subheader
                         # Create 3 columns for number widgets and put one st. number widget in each column
