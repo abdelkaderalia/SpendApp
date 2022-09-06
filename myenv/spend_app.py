@@ -214,8 +214,9 @@ if __name__ == "__main__":
                         fig.update_traces(mode="markers+lines", hovertemplate=None)
                         h['hoverdata'] = h['Spending'].apply(human_format)
                         fig.update_layout(hovermode="x")
-                        fig.update_traces(customdata = h['hoverdata'],hovertemplate = "%{customdata}")
+                        #fig.update_traces(customdata = h['hoverdata'],hovertemplate = "%{customdata}")
 
+                        #st.dataframe(h)
                         st.plotly_chart(fig, use_container_width=True) # Show plot
 
                         data_load_state.text('Loading data...done!') # Show message that data has loaded
